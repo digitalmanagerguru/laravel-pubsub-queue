@@ -1,6 +1,7 @@
 {
     "name": "kainxspirits/laravel-pubsub-queue",
     "description": "Queue driver for Google Cloud Pub/Sub.",
+    "version": "1.0.0",
     "keywords": [
         "kainxspirits",
         "laravel",
