@@ -1,6 +1,6 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Tests\Unit;
+namespace Digitalmanagerguru\PubSubQueue\Tests\Unit;
 
 use Carbon\Carbon;
 use Google\Cloud\PubSub\Message;
@@ -9,8 +9,8 @@ use Google\Cloud\PubSub\Subscription;
 use Google\Cloud\PubSub\Topic;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Queue as QueueContract;
-use Kainxspirits\PubSubQueue\Jobs\PubSubJob;
-use Kainxspirits\PubSubQueue\PubSubQueue;
+use Digitalmanagerguru\PubSubQueue\Jobs\PubSubJob;
+use Digitalmanagerguru\PubSubQueue\PubSubQueue;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 

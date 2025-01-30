@@ -1,6 +1,6 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Traits;
+namespace Digitalmanagerguru\PubSubQueue\Traits;
 
 trait HasOrderingKey
 {

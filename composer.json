@@ -1,8 +1,9 @@
 {
-    "name": "kainxspirits/laravel-pubsub-queue",
+    "name": "digitalmanagerguru/laravel-pubsub-queue",
     "description": "Queue driver for Google Cloud Pub/Sub.",
     "version": "1.0.0",
     "keywords": [
+        "digitalmanagerguru",
         "kainxspirits",
         "laravel",
         "queue",
@@ -16,6 +17,10 @@
         {
             "name": "Kendryck",
             "email": "kainxspirits@users.noreply.github.com"
+        },
+        {
+            "name": "Digital Manager Guru",
+            "email": "dev@digitalmanager.guru"
         }
     ],
     "require": {
@@ -31,12 +36,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Kainxspirits\\PubSubQueue\\": "src/"
+            "Digitalmanagerguru\\PubSubQueue\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kainxspirits\\PubSubQueue\\Tests\\": "tests/"
+            "Digitalmanagerguru\\PubSubQueue\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -45,7 +50,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Kainxspirits\\PubSubQueue\\PubSubQueueServiceProvider"
+                "Digitalmanagerguru\\PubSubQueue\\PubSubQueueServiceProvider"
             ]
         }
     },

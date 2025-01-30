@@ -1,11 +1,11 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Connectors;
+namespace Digitalmanagerguru\PubSubQueue\Connectors;
 
 use Google\Cloud\PubSub\PubSubClient;
 use Illuminate\Queue\Connectors\ConnectorInterface;
 use Illuminate\Support\Str;
-use Kainxspirits\PubSubQueue\PubSubQueue;
+use Digitalmanagerguru\PubSubQueue\PubSubQueue;
 
 class PubSubConnector implements ConnectorInterface
 {

@@ -1,19 +1,19 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Jobs;
+namespace Digitalmanagerguru\PubSubQueue\Jobs;
 
 use Google\Cloud\PubSub\Message;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Job as JobContract;
 use Illuminate\Queue\Jobs\Job;
-use Kainxspirits\PubSubQueue\PubSubQueue;
+use Digitalmanagerguru\PubSubQueue\PubSubQueue;
 
 class PubSubJob extends Job implements JobContract
 {
     /**
      * The PubSub queue.
      *
-     * @var \Kainxspirits\PubSubQueue\PubSubQueue
+     * @var \Digitalmanagerguru\PubSubQueue\PubSubQueue
      */
     protected $pubsub;
 
@@ -35,7 +35,7 @@ class PubSubJob extends Job implements JobContract
      * Create a new job instance.
      *
      * @param  \Illuminate\Container\Container  $container
-     * @param  \Kainxspirits\PubSubQueue\PubSubQueue  $sqs
+     * @param  \Digitalmanagerguru\PubSubQueue\PubSubQueue  $sqs
      * @param  \Google\Cloud\PubSub\Message  $job
      * @param  string  $connectionName
      * @param  string  $queue

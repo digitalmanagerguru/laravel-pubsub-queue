@@ -1,10 +1,10 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Tests\Unit\Connectors;
+namespace Digitalmanagerguru\PubSubQueue\Tests\Unit\Connectors;
 
 use Illuminate\Queue\Connectors\ConnectorInterface;
-use Kainxspirits\PubSubQueue\Connectors\PubSubConnector;
-use Kainxspirits\PubSubQueue\PubSubQueue;
+use Digitalmanagerguru\PubSubQueue\Connectors\PubSubConnector;
+use Digitalmanagerguru\PubSubQueue\PubSubQueue;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 

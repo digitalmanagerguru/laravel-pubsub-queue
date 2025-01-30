@@ -1,13 +1,13 @@
 <?php
 
-namespace Kainxspirits\PubSubQueue\Tests\Unit\Jobs;
+namespace Digitalmanagerguru\PubSubQueue\Tests\Unit\Jobs;
 
 use Google\Cloud\PubSub\Message;
 use Google\Cloud\PubSub\PubSubClient;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Job as JobContract;
-use Kainxspirits\PubSubQueue\Jobs\PubSubJob;
-use Kainxspirits\PubSubQueue\PubSubQueue;
+use Digitalmanagerguru\PubSubQueue\Jobs\PubSubJob;
+use Digitalmanagerguru\PubSubQueue\PubSubQueue;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
