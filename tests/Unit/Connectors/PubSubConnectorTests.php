@@ -51,7 +51,9 @@ final class PubSubConnectorTests extends TestCase
             'queue' => 'test',
             'project_id' => 'the-project-id',
             'subscriber' => 'test-subscriber',
-            'retries' => 1,
+            'retrySettings' => [
+                "maxRetries" => 1
+            ],
             'request_timeout' => 60,
         ];
     }
