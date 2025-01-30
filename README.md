@@ -1,6 +1,7 @@
 # Laravel PubSub Queue
-
-![Build Status](https://github.com/digitalmanagerguru/laravel-pubsub-queue/actions/workflows/main.yml/badge.svg)
+[![GitHub tag](https://img.shields.io/github/tag/digitalmanagerguru/laravel-pubsub-queue?include_prereleases=&sort=semver&color=blue)](https://github.com/digitalmanagerguru/laravel-pubsub-queue/releases/)
+[![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+[![issues - laravel-pubsub-queue](https://img.shields.io/github/issues/digitalmanagerguru/laravel-pubsub-queue)](https://github.com/digitalmanagerguru/laravel-pubsub-queue/issues)
 
 This package is a Laravel queue driver that uses the [Google PubSub](https://github.com/GoogleCloudPlatform/google-cloud-php-pubsub) service.
 
