@@ -83,6 +83,28 @@ class PubSubQueue extends Queue implements QueueContract
         return 0;
     }
 
+    public function pendingSize($queue = null)
+    {
+        return 0;
+    }
+
+    public function delayedSize($queue = null)
+    {
+        return 0;
+    }
+
+    public function reservedSize($queue = null)
+    {
+        return 0;
+    }
+    
+
+    public function creationTimeOfOldestPendingJob($queue = null)
+    {
+        
+    }
+    
+
     /**
      * Push a new job onto the queue.
      *
