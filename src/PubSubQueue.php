@@ -101,7 +101,7 @@ class PubSubQueue extends Queue implements QueueContract
 
     public function creationTimeOfOldestPendingJob($queue = null)
     {
-        
+       return 0; 
     }
     
 
