@@ -1,7 +1,7 @@
 {
     "name": "digitalmanagerguru/laravel-pubsub-queue",
     "description": "Queue driver for Google Cloud Pub/Sub.",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "keywords": [
         "digitalmanagerguru",
         "kainxspirits",
