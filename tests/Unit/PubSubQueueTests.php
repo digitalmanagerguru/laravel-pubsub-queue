@@ -191,6 +191,9 @@ final class PubSubQueueTests extends TestCase
             ->method('acknowledge');
 
         $this->subscription->method('pull')
+            ->with($this->callback(function ($options) {
+                return $options['returnImmediately'] === false && $options['maxMessages'] === 1;
+            }))
             ->willReturn([$this->message]);
 
         $this->topic->method('subscription')
@@ -208,6 +211,37 @@ final class PubSubQueueTests extends TestCase
         $this->queue->setContainer($this->createMock(Container::class));
 
         $this->assertTrue($this->queue->pop('test') instanceof PubSubJob);
+    }
+
+    public function testPopUsesConfiguredPullOptions(): void
+    {
+        /** @var \PHPUnit\Framework\MockObject\MockObject&PubSubQueue $queue */
+        $queue = $this->getMockBuilder(PubSubQueue::class)
+            ->setConstructorArgs([$this->client, 'default', 'subscriber', true, true, '', true, 5])
+            ->onlyMethods(['getTopic'])
+            ->getMock();
+
+        $this->subscription->method('pull')
+            ->with($this->callback(function ($options) {
+                return $options['returnImmediately'] === true && $options['maxMessages'] === 5;
+            }))
+            ->willReturn([$this->message]);
+
+        $this->topic->method('subscription')
+            ->willReturn($this->subscription);
+
+        $this->topic->method('exists')
+            ->willReturn(true);
+
+        $queue->method('getTopic')
+            ->willReturn($this->topic);
+
+        $this->message->method('data')
+            ->willReturn(base64_encode(json_encode(['foo' => 'bar'])));
+
+        $queue->setContainer($this->createMock(Container::class));
+
+        $this->assertTrue($queue->pop('test') instanceof PubSubJob);
     }
 
     public function testPopWhenNoJobAvailable(): void
