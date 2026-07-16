@@ -53,14 +53,30 @@ class PubSubQueue extends Queue implements QueueContract
      * @var string
      */
     protected $queuePrefix = '';
+    
+    /**
+     * Whether pull() should return immediately even with an empty response.
+     * false = long-poll (recommended): the pull blocks until a message is
+     * available and returns backlog messages right away, instead of the
+     * spurious empty responses that returnImmediately=true produces.
+     *
+     * @var bool
+     */
+    protected $returnImmediately;
 
+    /**
+     * Maximum number of messages to pull per request.
+     *
+     * @var int
+     */
+    protected $maxMessages;    
     /**
      * Create a new GCP PubSub instance.
      *
      * @param  \Google\Cloud\PubSub\PubSubClient  $pubsub
      * @param  string  $default
      */
-    public function __construct(PubSubClient $pubsub, $default, $subscriber = 'subscriber', $topicAutoCreation = true, $subscriptionAutoCreation = true, $queuePrefix = '')
+    public function __construct(PubSubClient $pubsub, $default, $subscriber = 'subscriber', $topicAutoCreation = true, $subscriptionAutoCreation = true, $queuePrefix = '', $returnImmediately = false, $maxMessages = 1)
     {
         $this->pubsub = $pubsub;
         $this->default = $default;
@@ -68,6 +84,8 @@ class PubSubQueue extends Queue implements QueueContract
         $this->topicAutoCreation = $topicAutoCreation;
         $this->subscriptionAutoCreation = $subscriptionAutoCreation;
         $this->queuePrefix = $queuePrefix;
+        $this->returnImmediately = $returnImmediately;
+        $this->maxMessages = $maxMessages;
     }
 
     /**
@@ -188,8 +206,8 @@ class PubSubQueue extends Queue implements QueueContract
 
         $subscription = $topic->subscription($this->getSubscriberName());
         $messages = $subscription->pull([
-            'returnImmediately' => true,
-            'maxMessages' => 1,
+            'returnImmediately' => $this->returnImmediately,
+            'maxMessages' => $this->maxMessages,
         ]);
 
         if (empty($messages) || count($messages) < 1) {
