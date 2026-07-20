@@ -188,7 +188,7 @@ final class PubSubQueueTests extends TestCase
     public function testPopWhenJobsAvailable(): void
     {
         $this->subscription->expects($this->once())
-            ->method('acknowledge');
+            ->method('acknowledgeBatch');
 
         $this->subscription->method('pull')
             ->with($this->callback(function ($options) {
@@ -247,7 +247,7 @@ final class PubSubQueueTests extends TestCase
     public function testPopWhenNoJobAvailable(): void
     {
         $this->subscription->expects($this->exactly(0))
-            ->method('acknowledge');
+            ->method('acknowledgeBatch');
 
         $this->subscription->method('pull')
             ->willReturn([]);
@@ -298,6 +298,65 @@ final class PubSubQueueTests extends TestCase
         $this->queue->setContainer($this->createMock(Container::class));
 
         $this->assertTrue(is_null($this->queue->pop('test')));
+    }
+
+    public function testPopBuffersBatchAndAcknowledgesOnce(): void
+    {
+        $m1 = $this->createMock(Message::class);
+        $m2 = $this->createMock(Message::class);
+        $m3 = $this->createMock(Message::class);
+        foreach ([$m1, $m2, $m3] as $m) {
+            $m->method('data')->willReturn(base64_encode(json_encode(['foo' => 'bar'])));
+        }
+
+        // One batch of 3 acknowledged in a single call; then an empty pull.
+        $this->subscription->expects($this->once())
+            ->method('acknowledgeBatch')
+            ->with($this->callback(function ($messages) {
+                return count($messages) === 3;
+            }));
+
+        $pullCalls = 0;
+        $this->subscription->method('pull')
+            ->willReturnCallback(function () use (&$pullCalls, $m1, $m2, $m3) {
+                return $pullCalls++ === 0 ? [$m1, $m2, $m3] : [];
+            });
+
+        $this->topic->method('subscription')->willReturn($this->subscription);
+        $this->topic->method('exists')->willReturn(true);
+        $this->queue->method('getTopic')->willReturn($this->topic);
+        $this->queue->setContainer($this->createMock(Container::class));
+
+        // Three messages served from the single pull, then buffer drained -> new pull -> null.
+        $this->assertTrue($this->queue->pop('test') instanceof PubSubJob);
+        $this->assertTrue($this->queue->pop('test') instanceof PubSubJob);
+        $this->assertTrue($this->queue->pop('test') instanceof PubSubJob);
+        $this->assertNull($this->queue->pop('test'));
+    }
+
+    public function testPopExcludesDelayedFromBatch(): void
+    {
+        $ready = $this->createMock(Message::class);
+        $ready->method('data')->willReturn(base64_encode(json_encode(['foo' => 'bar'])));
+        $ready->method('attribute')->willReturn(null);
+
+        $delayed = $this->createMock(Message::class);
+        $delayed->method('attribute')->willReturn((string) Carbon::now()->addSeconds(60)->getTimestamp());
+
+        // Only the ready message is acknowledged; the delayed one is left for redelivery.
+        $this->subscription->expects($this->once())
+            ->method('acknowledgeBatch')
+            ->with($this->callback(function ($messages) use ($ready) {
+                return count($messages) === 1 && $messages[0] === $ready;
+            }));
+
+        $this->subscription->method('pull')->willReturn([$delayed, $ready]);
+        $this->topic->method('subscription')->willReturn($this->subscription);
+        $this->topic->method('exists')->willReturn(true);
+        $this->queue->method('getTopic')->willReturn($this->topic);
+        $this->queue->setContainer($this->createMock(Container::class));
+
+        $this->assertTrue($this->queue->pop('test') instanceof PubSubJob);
     }
 
     public function testBulk(): void
