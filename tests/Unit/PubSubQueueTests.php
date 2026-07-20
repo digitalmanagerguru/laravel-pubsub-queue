@@ -11,9 +11,11 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Queue as QueueContract;
 use Digitalmanagerguru\PubSubQueue\Jobs\PubSubJob;
 use Digitalmanagerguru\PubSubQueue\PubSubQueue;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+#[AllowMockObjectsWithoutExpectations]
 final class PubSubQueueTests extends TestCase
 {
     /**
@@ -161,7 +163,7 @@ final class PubSubQueueTests extends TestCase
             ->method('pushRaw')
             ->willReturn($this->expectedResult)
             ->with(
-                $this->isType('string'),
+                $this->isString(),
                 $this->anything(),
                 $this->callback(function ($options) use ($delay_timestamp) {
                     if (! is_array($options)) {
