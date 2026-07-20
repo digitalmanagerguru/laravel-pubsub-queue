@@ -8,9 +8,11 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Job as JobContract;
 use Digitalmanagerguru\PubSubQueue\Jobs\PubSubJob;
 use Digitalmanagerguru\PubSubQueue\PubSubQueue;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+#[AllowMockObjectsWithoutExpectations]
 final class PubSubJobTests extends TestCase
 {
     /**
