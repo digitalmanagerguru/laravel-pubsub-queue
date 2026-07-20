@@ -69,7 +69,26 @@ class PubSubQueue extends Queue implements QueueContract
      *
      * @var int
      */
-    protected $maxMessages;    
+    protected $maxMessages;
+
+    /**
+     * In-memory buffer of pre-fetched messages, keyed by queue. A single batch
+     * pull fills the buffer; pop() then serves one message at a time from it,
+     * so N messages cost one pull + one batch-ack instead of N round-trips.
+     *
+     * @var array<string, \Google\Cloud\PubSub\Message[]>
+     */
+    protected $buffer = [];
+
+    /**
+     * Cached Subscription objects keyed by queue, to avoid re-resolving the
+     * topic + subscription on every pull/ack. That per-message overhead delays
+     * acknowledgements and drives ack-deadline expiry (and thus redelivery).
+     *
+     * @var array<string, \Google\Cloud\PubSub\Subscription>
+     */
+    protected $subscriptions = [];
+
     /**
      * Create a new GCP PubSub instance.
      *
@@ -198,36 +217,85 @@ class PubSubQueue extends Queue implements QueueContract
      */
     public function pop($queue = null)
     {
-        $topic = $this->getTopic($this->getQueue($queue));
+        $queue = $this->getQueue($queue);
+
+        // Serve any pre-fetched message from the buffer before hitting the API.
+        if (! empty($this->buffer[$queue])) {
+            return $this->makeJob(array_shift($this->buffer[$queue]), $queue);
+        }
+
+        $topic = $this->getTopic($queue);
 
         if ($this->topicAutoCreation && ! $topic->exists()) {
             return;
         }
 
-        $subscription = $topic->subscription($this->getSubscriberName());
+        $subscription = $this->subscription($queue);
         $messages = $subscription->pull([
             'returnImmediately' => $this->returnImmediately,
             'maxMessages' => $this->maxMessages,
         ]);
 
-        if (empty($messages) || count($messages) < 1) {
+        if (empty($messages)) {
             return;
         }
 
-        $available_at = $messages[0]->attribute('available_at');
-        if ($available_at && $available_at > time()) {
+        // Keep only messages that are available now. Delayed messages (future
+        // available_at) are left unacknowledged so Pub/Sub redelivers them when
+        // due — matching the previous per-message behaviour.
+        $ready = [];
+        foreach ($messages as $message) {
+            $available_at = $message->attribute('available_at');
+            if ($available_at && $available_at > time()) {
+                continue;
+            }
+            $ready[] = $message;
+        }
+
+        if (empty($ready)) {
             return;
         }
 
-        $this->acknowledge($messages[0], $queue);
+        // Acknowledge the whole batch in a single request, then buffer them.
+        $subscription->acknowledgeBatch($ready);
+        $this->buffer[$queue] = $ready;
 
+        return $this->makeJob(array_shift($this->buffer[$queue]), $queue);
+    }
+
+    /**
+     * Build a queue Job for a pulled message.
+     *
+     * @param  \Google\Cloud\PubSub\Message  $message
+     * @param  string  $queue
+     * @return \Digitalmanagerguru\PubSubQueue\Jobs\PubSubJob
+     */
+    protected function makeJob(Message $message, $queue)
+    {
         return new PubSubJob(
             $this->container,
             $this,
-            $messages[0],
+            $message,
             $this->connectionName,
-            $this->getQueue($queue)
+            $queue
         );
+    }
+
+    /**
+     * Get (and cache) the Subscription object for a queue.
+     *
+     * @param  string  $queue
+     * @return \Google\Cloud\PubSub\Subscription
+     */
+    protected function subscription($queue)
+    {
+        $queue = $this->getQueue($queue);
+
+        if (! isset($this->subscriptions[$queue])) {
+            $this->subscriptions[$queue] = $this->getTopic($queue)->subscription($this->getSubscriberName());
+        }
+
+        return $this->subscriptions[$queue];
     }
 
     /**
@@ -262,8 +330,7 @@ class PubSubQueue extends Queue implements QueueContract
      */
     public function acknowledge(Message $message, $queue = null)
     {
-        $subscription = $this->getTopic($this->getQueue($queue))->subscription($this->getSubscriberName());
-        $subscription->acknowledge($message);
+        $this->subscription($queue)->acknowledge($message);
     }
 
     /**
