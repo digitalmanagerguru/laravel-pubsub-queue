@@ -59,6 +59,7 @@ can be passed here (use `snake_case` keys — they are converted to `camelCase` 
 | `request_timeout` | `60` | Per-RPC timeout (seconds). Also bounds how long a long-poll `pull` blocks — see [Long-polling](#long-polling-return_immediately). |
 | `return_immediately` | `false` | Pull mode — see [Long-polling](#long-polling-return_immediately). |
 | `max_messages` | `1` | Messages fetched per pull — see [Batching](#batching-max_messages). |
+| `after_commit` | `false` | Defer every publish until the open database transaction commits — see [Dispatching after commit](#dispatching-after-commit). |
 
 ## How it works
 
@@ -101,6 +102,17 @@ Jobs dispatched with a delay (`later()` / released with a backoff) carry a futur
 attribute. Such messages are pulled but **not** acknowledged until they are due, so Pub/Sub
 redelivers them at the right time. Delayed messages are excluded from a batch (only currently-due
 messages are acknowledged and buffered).
+
+### Dispatching after commit
+
+`push()`, `later()` and `bulk()` go through Laravel's `enqueueUsing()`, so the standard after-commit
+rules apply: a job or queued listener with `$afterCommit = true` (or `->afterCommit()`), a
+`ShouldQueueAfterCommit` job, or any job on a connection with `after_commit => true` is published only
+when the open database transaction commits, and dropped if it rolls back. `$afterCommit = false` on the
+job wins over the connection setting. Outside a transaction the job is published at once. In `bulk()`
+the deferred jobs are published one by one on commit; the rest still go in a single `publishBatch`.
+
+Before 3.2.0 the driver published straight away, inside the transaction, ignoring all of the above.
 
 ### Message ordering
 
