@@ -331,7 +331,7 @@ class PubSubQueue extends Queue implements QueueContract
 
         foreach ($immediate as $job) {
             $payload = $this->createPayload($job, $this->getQueue($queue), $data);
-            $payloads[] = ['data' => base64_encode($payload)] + (isset($job->orderingKey) ? ['orderingKey' => $job->orderingKey] : []);
+            $payloads[] = ['data' => base64_encode($payload)] + $this->orderingOptions($job);
         }
 
         $topic = $this->getTopic($this->getQueue($queue), $this->topicAutoCreation);
