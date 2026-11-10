@@ -95,8 +95,9 @@ class PubSubQueue extends Queue implements QueueContract
      * @param  \Google\Cloud\PubSub\PubSubClient  $pubsub
      * @param  string  $default
      */
-    public function __construct(PubSubClient $pubsub, $default, $subscriber = 'subscriber', $topicAutoCreation = true, $subscriptionAutoCreation = true, $queuePrefix = '', $returnImmediately = false, $maxMessages = 1)
+    public function __construct(PubSubClient $pubsub, $default, $subscriber = 'subscriber', $topicAutoCreation = true, $subscriptionAutoCreation = true, $queuePrefix = '', $returnImmediately = false, $maxMessages = 1, $dispatchAfterCommit = false)
     {
+        $this->dispatchAfterCommit = $dispatchAfterCommit;
         $this->pubsub = $pubsub;
         $this->default = $default;
         $this->subscriber = $subscriber;
@@ -152,13 +153,15 @@ class PubSubQueue extends Queue implements QueueContract
      */
     public function push($job, $data = '', $queue = null)
     {
-        $options = [];
-
-        if (isset($job->orderingKey)) {
-            $options['orderingKey'] = $job->orderingKey;
-        }
-
-        return $this->pushRaw($this->createPayload($job, $this->getQueue($queue), $data), $queue, $options);
+        // Pelo enqueueUsing() do Laravel, que é onde o afterCommit (do job ou o after_commit da conexão) adia a
+        // publicação para o commit da transação; chamar o pushRaw() direto publicava dentro dela.
+        return $this->enqueueUsing(
+            $job,
+            $this->createPayload($job, $this->getQueue($queue), $data),
+            $queue,
+            null,
+            fn ($payload, $queue) => $this->pushRaw($payload, $queue, $this->orderingOptions($job))
+        );
     }
 
     /**
@@ -202,10 +205,12 @@ class PubSubQueue extends Queue implements QueueContract
      */
     public function later($delay, $job, $data = '', $queue = null)
     {
-        return $this->pushRaw(
+        return $this->enqueueUsing(
+            $job,
             $this->createPayload($job, $this->getQueue($queue), $data),
             $queue,
-            ['available_at' => (string) $this->availableAt($delay)]
+            $delay,
+            fn ($payload, $queue, $delay) => $this->pushRaw($payload, $queue, ['available_at' => (string) $this->availableAt($delay)])
         );
     }
 
@@ -309,10 +314,24 @@ class PubSubQueue extends Queue implements QueueContract
     public function bulk($jobs, $data = '', $queue = null)
     {
         $payloads = [];
+        $immediate = [];
 
+        // Quem pede afterCommit vai pelo push(), que espera o commit; o resto segue num único publishBatch.
         foreach ((array) $jobs as $job) {
+            if ($this->shouldDispatchAfterCommit($job)) {
+                $this->push($job, $data, $queue);
+            } else {
+                $immediate[] = $job;
+            }
+        }
+
+        if (empty($immediate)) {
+            return null;
+        }
+
+        foreach ($immediate as $job) {
             $payload = $this->createPayload($job, $this->getQueue($queue), $data);
-            $payloads[] = ['data' => base64_encode($payload)] + (isset($job->orderingKey) ? ['orderingKey' => $job->orderingKey] : []);
+            $payloads[] = ['data' => base64_encode($payload)] + $this->orderingOptions($job);
         }
 
         $topic = $this->getTopic($this->getQueue($queue), $this->topicAutoCreation);
@@ -352,6 +371,11 @@ class PubSubQueue extends Queue implements QueueContract
             'data' => $message->data(),
             'attributes' => $options,
         ]);
+    }
+
+    protected function orderingOptions($job): array
+    {
+        return isset($job->orderingKey) ? ['orderingKey' => $job->orderingKey] : [];
     }
 
     /**

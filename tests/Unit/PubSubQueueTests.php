@@ -65,6 +65,9 @@ final class PubSubQueueTests extends TestCase
                 'availableAt',
                 'subscribeToTopic',
             ])->getMock();
+
+        // O QueueManager sempre dá o container à fila; o push/later passam pelo enqueueUsing(), que o usa.
+        $this->queue->setContainer(new Container);
     }
 
     public function testImplementsQueueInterface(): void
